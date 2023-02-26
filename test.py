@@ -8,13 +8,35 @@ Vissim = com.gencache.EnsureDispatch("Vissim.Vissim")
 Path_of_COM = "C:\code\CIVE401\Vissim Files\Feb 19 Vissim Run"
 
 # Load a Vissim Network
-Filename = os.path.join(Path_of_COM, "RADE Solutions Base Model Feb 19.inpx")
+Filename = os.path.join(Path_of_COM, "Base Model Routed Vehicles.inpx")
 flag_read_additionally = False
 Vissim.LoadNet(Filename, flag_read_additionally)
 
 # Load Layout:
-Filename = os.path.join(Path_of_COM, "RADE Solutions Base Model Feb 19.layx")
+Filename = os.path.join(Path_of_COM, "Base Model Routed Vehicles.layx")
 Vissim.LoadLayout(Filename)
+
+
+def calculateQueue(linkNum, lanes):
+    vehicles = Vissim.Net.Vehicles.GetAll()
+    lane_count = {}
+
+    for lane in lanes:
+        lane_count[lane] = 0
+
+    for vehicle in vehicles:
+        raw = vehicle.AttValue("Lane")
+        link_lane_arr = raw.split("-")
+        link = int(link_lane_arr[0])
+        lane = int(link_lane_arr[1])
+
+        speed = float(vehicle.AttValue("Speed"))
+
+        # a vehicle is considered queued if its speed is less than 5km/h
+        if link == linkNum and speed < 5:
+            lane_count[lane] += 1
+    print(lane_count)
+    return max(lane_count.values())
 
 
 def printSimulationInfo():
@@ -115,27 +137,41 @@ setSimulationBreak(1)
 SC_number = 3  # SC = SignalController
 
 SignalController = Vissim.Net.SignalControllers.ItemByKey(SC_number)
+willow = Vissim.Net.SignalControllers.ItemByKey(4)
 
 new_state = "RED"
 for i in range(1, 9):
     signalGroup = SignalController.SGs.ItemByKey(i)
-    signalGroup.SetAttValue("SigState", new_state)
+    signalGroup.SetAttValue("SigState", "GREEN")
 
-setSimulationBreak(1400)
+for i in range(2, 9):
+    if i == 3:
+        continue
+    signalGroup = willow.SGs.ItemByKey(i)
+    signalGroup.SetAttValue("SigState", "RED")
 
-datapoints = Vissim.Net.VehicleTravelTimeMeasurements
-datapoint1 = datapoints.ItemByKey(1)
-datapoint2 = datapoints.ItemByKey(2)
+setSimulationBreak(150)
 
-print(datapoints.ItemByKey())
+print(calculateQueue(23, [1, 2]))
+
+for i in range(2, 9):
+    if i == 3:
+        continue
+    signalGroup = willow.SGs.ItemByKey(i)
+    signalGroup.SetAttValue("SigState", "GREEN")
+
+# datapoints = Vissim.Net.VehicleTravelTimeMeasurements
+# datapoint1 = datapoints.ItemByKey(1)
+# datapoint2 = datapoints.ItemByKey(2)
+
 
 # datapoint5 = datapoints.ItemByKey(3)
 # print("test")
 
 # datapoint6 = datapoints.ItemByKey(4)
 
-print(datapoint1.AttValue("TravTm(Current, Last, All)"))
-print(datapoint2.AttValue("TravTm(Current, Last, All)"))
+# print(datapoint1.AttValue("TravTm(Current, Last, All)"))
+# print(datapoint2.AttValue("TravTm(Current, Last, All)"))
 
 
 # will stop at the last break, run continuous again to go to end of simulation
