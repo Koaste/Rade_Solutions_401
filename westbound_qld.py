@@ -110,7 +110,7 @@ def calculateQueue(linkNum, lanes):
         # a vehicle is considered queued if its speed is less than 5km/h
         if link == linkNum and speed < 5:
             lane_count[lane] += 1
-    print("lane count for lane ", linkNum, ": ", lane_count)
+    print("lane count for link ", linkNum, ": ", lane_count)
     return max(lane_count.values())
 
 
@@ -185,9 +185,13 @@ yongeWbLeft.SetAttValue("SigState", red)
 willowWbLeft.SetAttValue("SigState", red)
 willowNbLeft.SetAttValue("SigState", red)
 
+willowNb.SetAttValue("SigState", red)
+willowSb.SetAttValue("SigState", red)
 willowWb.SetAttValue("SigState", red)
 willowEb.SetAttValue("SigState", red)
 
+yongeNb.SetAttValue("SigState", red)
+yongeSb.SetAttValue("SigState", red)
 yongeWb.SetAttValue("SigState", red)
 yongeEb.SetAttValue("SigState", red)
 
@@ -204,23 +208,38 @@ cycleLength = 110
 
 
 while currentTime < end_of_simulation:
-    # start of this loop assumes the first intersection is red
-    queueLength = calculateQueue(23, [1, 2])
-    print("queue length on link 23: ", queueLength)
+    # start with north left turn from willowdale onto steeles
+    cycleStart = currentTime
 
-    if queueLength <= 1:
+    queue9Length = calculateQueue(9, [1, 2])
+
+    if queue9Length > 0:
+        print("willow northbound left green time: ", currentTime)
+        willowNbLeft.SetAttValue("SigState", green)
+
+        currentTime += 7  # max northbound
+        setSimulationBreak(currentTime)
+
+        print("willow northbound left red time: ", currentTime)
+        willowNbLeft.SetAttValue("SigState", red)
+
+    # start of this loop assumes the first intersection is red
+    queue23Length = calculateQueue(23, [1, 2])
+    print("queue length on link 23: ", queue23Length)
+
+    if queue23Length <= 1:
         offset = 1
-    elif queueLength > 10:
+    elif queue23Length > 10:
         offset = 9 * increment
     else:
-        offset = (queueLength - 1) * increment
+        offset = (queue23Length - 1) * increment
 
-    # change first intersection to green
+    # change first westbound/eastbound intersection to green
     willowSb.SetAttValue("SigState", red)
     willowNb.SetAttValue("SigState", red)
 
     print("willowdale green time: ", currentTime)
-    willowGreen = currentTime
+    # willowGreen = currentTime
 
     willowWb.SetAttValue("SigState", green)
     willowEb.SetAttValue("SigState", green)
@@ -231,7 +250,7 @@ while currentTime < end_of_simulation:
     # change the next intersection to green after baseTime
     yongeSb.SetAttValue("SigState", red)
     yongeNb.SetAttValue("SigState", red)
-    print("test", currentTime)
+
     print("yonge green time: ", currentTime)
     yongeWb.SetAttValue("SigState", green)
     yongeEb.SetAttValue("SigState", green)
@@ -239,7 +258,7 @@ while currentTime < end_of_simulation:
     # now both intersections are green
     # change willowdale to red after offset
 
-    currentTime += offset
+    currentTime += offset + 1
     setSimulationBreak(currentTime)
 
     willowSb.SetAttValue("SigState", green)
@@ -259,7 +278,7 @@ while currentTime < end_of_simulation:
     yongeWb.SetAttValue("SigState", red)
     yongeEb.SetAttValue("SigState", red)
 
-    currentTime = willowGreen + cycleLength
+    currentTime = cycleStart + cycleLength
     setSimulationBreak(currentTime)
 
 
