@@ -139,26 +139,26 @@ SC_number = 3  # SC = SignalController
 SignalController = Vissim.Net.SignalControllers.ItemByKey(SC_number)
 willow = Vissim.Net.SignalControllers.ItemByKey(4)
 
-new_state = "RED"
-for i in range(1, 9):
-    signalGroup = SignalController.SGs.ItemByKey(i)
-    signalGroup.SetAttValue("SigState", "GREEN")
+# new_state = "RED"
+# for i in range(1, 9):
+#     signalGroup = SignalController.SGs.ItemByKey(i)
+#     signalGroup.SetAttValue("SigState", "GREEN")
 
-for i in range(2, 9):
-    if i == 3:
-        continue
-    signalGroup = willow.SGs.ItemByKey(i)
-    signalGroup.SetAttValue("SigState", "RED")
+# for i in range(2, 9):
+#     if i == 3:
+#         continue
+#     signalGroup = willow.SGs.ItemByKey(i)
+#     signalGroup.SetAttValue("SigState", "RED")
 
-setSimulationBreak(150)
+# setSimulationBreak(150)
 
-print(calculateQueue(23, [1, 2]))
+# print(calculateQueue(23, [1, 2]))
 
-for i in range(2, 9):
-    if i == 3:
-        continue
-    signalGroup = willow.SGs.ItemByKey(i)
-    signalGroup.SetAttValue("SigState", "GREEN")
+# for i in range(2, 9):
+#     if i == 3:
+#         continue
+#     signalGroup = willow.SGs.ItemByKey(i)
+#     signalGroup.SetAttValue("SigState", "GREEN")
 
 # datapoints = Vissim.Net.VehicleTravelTimeMeasurements
 # datapoint1 = datapoints.ItemByKey(1)
