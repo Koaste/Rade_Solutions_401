@@ -138,6 +138,7 @@ willowdaleController = Vissim.Net.SignalControllers.ItemByKey(4)
 
 red = "RED"
 green = "GREEN"
+amber = "AMBER"
 
 # set yonge phases
 yongeNbLeft = yongeController.SGs.ItemByKey(1)
@@ -235,7 +236,11 @@ while True:
         willowNbLeft.SetAttValue("SigState", green)
 
         # stop willow north bound left and start willow north
+
         setSimulationBreak(willowNBLStop)
+        willowNbLeft.SetAttValue("SigState", amber)
+
+        setSimulationBreak(willowNBLStop + 3)
         willowNbLeft.SetAttValue("SigState", red)
 
     willowNb.SetAttValue("SigState", green)
@@ -243,14 +248,39 @@ while True:
 
     # stop yonge west and start yonge north
     setSimulationBreak(yongeNorthStart)
+    yongeWb.SetAttValue("SigState", amber)
+    yongeEb.SetAttValue("SigState", amber)
+
+    setSimulationBreak(yongeNorthStart + 3)
     yongeWb.SetAttValue("SigState", red)
     yongeEb.SetAttValue("SigState", red)
+
+    queue63Length = calculateQueue(63, [1])
+
+    if queue63Length > 0:
+        advanceLeftTime = 6
+
+        if queue9Length > 1:
+            advanceLeftTime = 7
+        yongeNBLStop = yongeNorthStart + advanceLeftTime
+
+        yongeNbLeft.SetAttValue("SigState", green)
+
+        setSimulationBreak(yongeNBLStop)
+        yongeNbLeft.SetAttValue("SigState", amber)
+
+        setSimulationBreak(yongeNBLStop + 3)
+        yongeNbLeft.SetAttValue("SigState", red)
 
     yongeSb.SetAttValue("SigState", green)
     yongeNb.SetAttValue("SigState", green)
 
     # stop willow north/south and start willow west
     setSimulationBreak(willowWestStart)
+    willowNb.SetAttValue("SigState", amber)
+    willowSb.SetAttValue("SigState", amber)
+
+    setSimulationBreak(willowWestStart + 3)
     willowNb.SetAttValue("SigState", red)
     willowSb.SetAttValue("SigState", red)
 
@@ -259,7 +289,10 @@ while True:
 
     # start yonge west and stop yonge north
     setSimulationBreak(yongeWestStart)
+    yongeSb.SetAttValue("SigState", amber)
+    yongeNb.SetAttValue("SigState", amber)
 
+    setSimulationBreak(yongeWestStart + 3)
     yongeSb.SetAttValue("SigState", red)
     yongeNb.SetAttValue("SigState", red)
 
@@ -267,9 +300,13 @@ while True:
     yongeEb.SetAttValue("SigState", green)
 
     # stop willow west and restart cycle with willow north bound left
+    setSimulationBreak(willowWestStop - 3)
+    willowWb.SetAttValue("SigState", amber)
+    willowEb.SetAttValue("SigState", amber)
+
     setSimulationBreak(willowWestStop)
-    willowWb.SetAttValue("SigState", green)
-    willowEb.SetAttValue("SigState", green)
+    willowWb.SetAttValue("SigState", red)
+    willowEb.SetAttValue("SigState", red)
 
     willowNBLStart = willowWestStop + 1
 
