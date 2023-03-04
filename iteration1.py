@@ -5,15 +5,16 @@ import os
 
 # Connect to Vissim
 Vissim = com.gencache.EnsureDispatch("Vissim.Vissim")
-Path_of_COM = "C:\code\CIVE401\Vissim Files\Feb 19 Vissim Run"
+Path_of_COM = "C:\code\CIVE401\Vissim Files\Feb 27 Vissim Run"
 
 # Load a Vissim Network
-Filename = os.path.join(Path_of_COM, "Base Model Routed Vehicles.inpx")
+# Filename = os.path.join(Path_of_COM, "Base Model Routed Vehicles.inpx")
+Filename = os.path.join(Path_of_COM, "Feb 27 Base Model Routed.inpx")
 flag_read_additionally = False
 Vissim.LoadNet(Filename, flag_read_additionally)
 
 # Load Layout:
-Filename = os.path.join(Path_of_COM, "Base Model Routed Vehicles.layx")
+Filename = os.path.join(Path_of_COM, "Feb 27 Base Model Routed.layx")
 Vissim.LoadLayout(Filename)
 
 
@@ -114,6 +115,26 @@ def calculateQueue(linkNum, lanes):
     return max(lane_count.values())
 
 
+def initializeMovements(controller, validMovements):
+    movementDict = {
+        1: "WBLeft",
+        2: "EB",
+        3: "SBLeft",
+        4: "NB",
+        5: "EBLeft",
+        6: "WB",
+        7: "NBLeft",
+        8: "SB",
+    }
+
+    ret = {}
+
+    for movement in validMovements:
+        ret[movementDict[movement]] = controller.SGs.ItemByKey(movement)
+
+    return ret
+
+
 # ========================================================================
 # Simulation set up
 # ========================================================================
@@ -130,88 +151,65 @@ Vissim.Simulation.SetAttValue("SimPeriod", end_of_simulation)
 yongeController = Vissim.Net.SignalControllers.ItemByKey(3)
 willowdaleController = Vissim.Net.SignalControllers.ItemByKey(4)
 
-# Yonge Signal Groups (Phases)
-# 1: NBL, 2: SB, 3: EBL, 4: WB, 5: SBL, 6: NB, 7: WBL, 8: EB
+# Phases
+# 1: WBL, 2: EB, 3: SBL, 4: NB, 5: EBL, 6: WB, 7: NBL, 8: SB
 
-# Willowdale Signal Groups (Phases)
-# 2: WB, 4: NB, 5: WBL, 6: EB, 7: NBL, 8: SB
+# Yonge has all 8 phases
+# Willowdale has 1 2 4 6 7 8
 
 red = "RED"
 green = "GREEN"
 amber = "AMBER"
 
-# set yonge phases
-yongeNbLeft = yongeController.SGs.ItemByKey(1)
-yongeEbLeft = yongeController.SGs.ItemByKey(3)
-yongeSbLeft = yongeController.SGs.ItemByKey(5)
-yongeWbLeft = yongeController.SGs.ItemByKey(7)
+controllers = {
+    "willowdale": Vissim.Net.SignalControllers.ItemByKey(4),
+    "yonge": Vissim.Net.SignalControllers.ItemByKey(3),
+}
 
-yongeSb = yongeController.SGs.ItemByKey(2)
-yongeWb = yongeController.SGs.ItemByKey(4)
-yongeNb = yongeController.SGs.ItemByKey(6)
-yongeEb = yongeController.SGs.ItemByKey(8)
 
-# set willowdale phases
-willowWbLeft = willowdaleController.SGs.ItemByKey(5)
-willowNbLeft = willowdaleController.SGs.ItemByKey(7)
+yongeMovements = initializeMovements(controllers["yonge"], [1, 2, 3, 4, 5, 6, 7, 8])
+willowMovements = initializeMovements(controllers["willowdale"], [1, 2, 4, 6, 7, 8])
 
-willowSb = willowdaleController.SGs.ItemByKey(8)
-willowWb = willowdaleController.SGs.ItemByKey(2)
-willowNb = willowdaleController.SGs.ItemByKey(4)
-willowEb = willowdaleController.SGs.ItemByKey(6)
 
 currentTime = 1
 setSimulationBreak(currentTime)
 
 # set everything to red
-yongeNbLeft.SetAttValue("SigState", red)
-yongeEbLeft.SetAttValue("SigState", red)
-yongeSbLeft.SetAttValue("SigState", red)
-yongeWbLeft.SetAttValue("SigState", red)
 
-willowWbLeft.SetAttValue("SigState", red)
-willowNbLeft.SetAttValue("SigState", red)
+for movement in yongeMovements.values():
+    movement.SetAttValue("SigState", red)
 
-willowNb.SetAttValue("SigState", red)
-willowSb.SetAttValue("SigState", red)
-willowWb.SetAttValue("SigState", red)
-willowEb.SetAttValue("SigState", red)
-
-yongeNb.SetAttValue("SigState", red)
-yongeSb.SetAttValue("SigState", red)
-yongeWb.SetAttValue("SigState", red)
-yongeEb.SetAttValue("SigState", red)
+for movement in willowMovements.values():
+    movement.SetAttValue("SigState", red)
 
 # timing variables
 offset = 30  # the time it takes for one queued vehicle to go to next intersection
 increment = 2  # in a queued platoon, the time it takes for subsequent cars to pass the next intersection
 maxQueue = 10  # to calculate new time, do base + (queue length - 1) * increment
 
-advanceLeftTime = 6
+advanceLeftTime = 7
 totalNorthTime = 50
 totalWestTime = 60
 
 cycleLength = 110
-
-# queue9Length = calculateQueue(9, [1, 2])
 
 # willowdale timings
 
 willowNBLStart = 2
 
 while True:
-    queue9Length = calculateQueue(9, [2])
+    queue9Length = calculateQueue(9, [2])  # willow north bound left
 
     willowWestStart = willowNBLStart + 50  # willow north stop, + total north time
 
     willowWestStop = willowWestStart + 60  # + total west time
 
-    # min offset is 12
+    # min offset is 14
     if queue9Length == 0:
         offset = 30
     elif queue9Length > 0:
         offset = 30 - queue9Length * 2
-        offset = max(offset, 12)
+        offset = max(offset, 14)
 
     yongeNorthStart = willowNBLStart + offset
     yongeWestStart = willowWestStart + offset
@@ -220,93 +218,120 @@ while True:
     setSimulationBreak(willowNBLStart)
     queue9Length = calculateQueue(9, [2])
     if queue9Length > 0:
-        advanceLeftTime = 6
-
-        if queue9Length > 1:
-            advanceLeftTime = 7
         willowNBLStop = (
             willowNBLStart + advanceLeftTime
         )  # willow north start , + advanceLeftTime
 
         # start willow north bound left
 
-        willowWb.SetAttValue("SigState", red)
-        willowEb.SetAttValue("SigState", red)
+        willowMovements["WB"].SetAttValue("SigState", red)
+        willowMovements["EB"].SetAttValue("SigState", red)
 
-        willowNbLeft.SetAttValue("SigState", green)
+        willowMovements["NBLeft"].SetAttValue("SigState", green)
 
         # stop willow north bound left and start willow north
 
         setSimulationBreak(willowNBLStop)
-        willowNbLeft.SetAttValue("SigState", amber)
+        willowMovements["NBLeft"].SetAttValue("SigState", amber)
 
         setSimulationBreak(willowNBLStop + 3)
-        willowNbLeft.SetAttValue("SigState", red)
+        willowMovements["NBLeft"].SetAttValue("SigState", red)
 
-    willowNb.SetAttValue("SigState", green)
-    willowSb.SetAttValue("SigState", green)
+    willowMovements["NB"].SetAttValue("SigState", green)
+    willowMovements["SB"].SetAttValue("SigState", green)
 
     # stop yonge west and start yonge north
     setSimulationBreak(yongeNorthStart)
-    yongeWb.SetAttValue("SigState", amber)
-    yongeEb.SetAttValue("SigState", amber)
+    yongeMovements["WB"].SetAttValue("SigState", amber)
+    yongeMovements["EB"].SetAttValue("SigState", amber)
 
     setSimulationBreak(yongeNorthStart + 3)
-    yongeWb.SetAttValue("SigState", red)
-    yongeEb.SetAttValue("SigState", red)
+    yongeMovements["WB"].SetAttValue("SigState", red)
+    yongeMovements["EB"].SetAttValue("SigState", red)
 
-    queue63Length = calculateQueue(63, [1])
+    queue63Length = calculateQueue(63, [1])  # yonge NBL
+    queue64Length = calculateQueue(64, [1])  # yonge SBL
 
-    if queue63Length > 0:
-        advanceLeftTime = 6
-
-        if queue9Length > 1:
-            advanceLeftTime = 7
-        yongeNBLStop = yongeNorthStart + advanceLeftTime
-
-        yongeNbLeft.SetAttValue("SigState", green)
+    # yonge northbound left and southbound left advance
+    yongeNBLStop = yongeNorthStart + advanceLeftTime
+    if queue63Length > 0 and queue64Length > 0:
+        yongeMovements["NBLeft"].SetAttValue("SigState", green)
+        yongeMovements["SBLeft"].SetAttValue("SigState", green)
 
         setSimulationBreak(yongeNBLStop)
-        yongeNbLeft.SetAttValue("SigState", amber)
+        yongeMovements["NBLeft"].SetAttValue("SigState", amber)
+        yongeMovements["SBLeft"].SetAttValue("SigState", amber)
 
         setSimulationBreak(yongeNBLStop + 3)
-        yongeNbLeft.SetAttValue("SigState", red)
+        yongeMovements["NBLeft"].SetAttValue("SigState", red)
+        yongeMovements["SBLeft"].SetAttValue("SigState", red)
+    elif queue63Length > 0:
+        yongeMovements["NBLeft"].SetAttValue("SigState", green)
 
-    yongeSb.SetAttValue("SigState", green)
-    yongeNb.SetAttValue("SigState", green)
+        setSimulationBreak(yongeNBLStop)
+        yongeMovements["NBLeft"].SetAttValue("SigState", amber)
+
+        setSimulationBreak(yongeNBLStop + 3)
+        yongeMovements["NBLeft"].SetAttValue("SigState", red)
+    elif queue64Length > 0:
+        yongeMovements["SBLeft"].SetAttValue("SigState", green)
+
+        setSimulationBreak(yongeNBLStop)
+        yongeMovements["SBLeft"].SetAttValue("SigState", amber)
+
+        setSimulationBreak(yongeNBLStop + 3)
+        yongeMovements["SBLeft"].SetAttValue("SigState", red)
+
+    yongeMovements["SB"].SetAttValue("SigState", green)
+    yongeMovements["NB"].SetAttValue("SigState", green)
 
     # stop willow north/south and start willow west
     setSimulationBreak(willowWestStart)
-    willowNb.SetAttValue("SigState", amber)
-    willowSb.SetAttValue("SigState", amber)
+
+    willowMovements["NB"].SetAttValue("SigState", amber)
+    willowMovements["SB"].SetAttValue("SigState", amber)
 
     setSimulationBreak(willowWestStart + 3)
-    willowNb.SetAttValue("SigState", red)
-    willowSb.SetAttValue("SigState", red)
+    willowMovements["NB"].SetAttValue("SigState", red)
+    willowMovements["SB"].SetAttValue("SigState", red)
 
-    willowWb.SetAttValue("SigState", green)
-    willowEb.SetAttValue("SigState", green)
+    queue52Length = calculateQueue(52, [1])  # willow westbound left
+
+    willowMovements["WB"].SetAttValue("SigState", green)
+
+    if queue52Length > 0:
+        willowWBLStop = willowWestStart + 3 + 7
+        willowMovements["WBLeft"].SetAttValue("SigState", green)
+        print(willowWBLStop, yongeWestStart)
+
+        setSimulationBreak(willowWBLStop)
+        willowMovements["WBLeft"].SetAttValue("SigState", amber)
+
+        setSimulationBreak(willowWBLStop + 3)
+        willowMovements["WBLeft"].SetAttValue("SigState", red)
+
+    willowMovements["EB"].SetAttValue("SigState", green)
 
     # start yonge west and stop yonge north
     setSimulationBreak(yongeWestStart)
-    yongeSb.SetAttValue("SigState", amber)
-    yongeNb.SetAttValue("SigState", amber)
+    yongeMovements["SB"].SetAttValue("SigState", amber)
+    yongeMovements["NB"].SetAttValue("SigState", amber)
 
     setSimulationBreak(yongeWestStart + 3)
-    yongeSb.SetAttValue("SigState", red)
-    yongeNb.SetAttValue("SigState", red)
+    yongeMovements["SB"].SetAttValue("SigState", red)
+    yongeMovements["NB"].SetAttValue("SigState", red)
 
-    yongeWb.SetAttValue("SigState", green)
-    yongeEb.SetAttValue("SigState", green)
+    yongeMovements["WB"].SetAttValue("SigState", green)
+    yongeMovements["EB"].SetAttValue("SigState", green)
 
     # stop willow west and restart cycle with willow north bound left
     setSimulationBreak(willowWestStop - 3)
-    willowWb.SetAttValue("SigState", amber)
-    willowEb.SetAttValue("SigState", amber)
+    willowMovements["WB"].SetAttValue("SigState", amber)
+    willowMovements["EB"].SetAttValue("SigState", amber)
 
     setSimulationBreak(willowWestStop)
-    willowWb.SetAttValue("SigState", red)
-    willowEb.SetAttValue("SigState", red)
+    willowMovements["WB"].SetAttValue("SigState", red)
+    willowMovements["EB"].SetAttValue("SigState", red)
 
     willowNBLStart = willowWestStop + 1
 
