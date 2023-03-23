@@ -211,12 +211,12 @@ while True:
     willowWestStop = willowWestStart + 60  # + total west time
 
     maxomeNorthStart = willowNBLStart + 60
-    # min yongeWillowOffset is 14
+
     if queue9Length == 0:
         yongeWillowOffset = 30
     elif queue9Length > 0:
         yongeWillowOffset = 30 - queue9Length * 2
-        yongeWillowOffset = max(yongeWillowOffset, 17)
+        yongeWillowOffset = max(yongeWillowOffset, 15)
 
     yongeNorthStart = willowNBLStart + yongeWillowOffset
     yongeWestStart = willowWestStart + yongeWillowOffset
